@@ -1,17 +1,32 @@
-# ASP.NET Core
-# Build and test ASP.NET Core projects targeting .NET Core.
-# Add steps that run tests, create a NuGet package, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
-
 trigger:
 - main
 
-pool:
-  vmImage: ubuntu-latest
-
 variables:
-  buildConfiguration: 'Release'
+  envName: 'Pipeline-Level'   # Lowest precedence
 
-steps:
-- script: dotnet build --configuration $(buildConfiguration)
-  displayName: 'dotnet build $(buildConfiguration)'
+stages:
+- stage: BuildStage
+  variables:
+    envName: 'Stage-Level'    # Overrides pipeline
+
+  jobs:
+  - job: BuildJob
+    variables:
+      envName: 'Job-Level'    # Overrides stage & pipeline
+
+    steps:
+    - task: Bash@3
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "Environment: $(envName)"  # Should print Job-Level
+
+    - script: echo "Task override example"
+      env:
+        envName: 'Task-Level'             # Highest precedence
+
+    - task: Bash@3
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "Environment from overridden task: $envName"
